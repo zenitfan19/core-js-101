@@ -120,34 +120,87 @@ function fromJSON(proto, json) {
  *  For more examples see unit tests.
  */
 
+class SelectorConstructor {
+  constructor() {
+    this.cssSelector = '';
+    this.hasElement = false;
+    this.hasId = false;
+    this.hasPseudoElement = false;
+    this.currentOrder = 0;
+  }
+
+  element(value) {
+    this.checkOrder(1);
+    if (this.hasElement) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    this.cssSelector += value;
+    this.hasElement = true;
+    this.currentOrder = 1;
+    return this;
+  }
+
+  id(value) {
+    this.checkOrder(2);
+    if (this.hasId) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    this.cssSelector += `#${value}`;
+    this.hasId = true;
+    this.currentOrder = 2;
+    return this;
+  }
+
+  class(value) {
+    this.checkOrder(3);
+    this.cssSelector += `.${value}`;
+    this.currentOrder = 3;
+    return this;
+  }
+
+  attr(value) {
+    this.checkOrder(4);
+    this.cssSelector += `[${value}]`;
+    this.currentOrder = 4;
+    return this;
+  }
+
+  pseudoClass(value) {
+    this.checkOrder(5);
+    this.cssSelector += `:${value}`;
+    this.currentOrder = 5;
+    return this;
+  }
+
+  pseudoElement(value) {
+    this.checkOrder(6);
+    if (this.hasPseudoElement) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    this.cssSelector += `::${value}`;
+    this.hasPseudoElement = true;
+    this.currentOrder = 6;
+    return this;
+  }
+
+  combine(selector1, combinator, selector2) {
+    this.cssSelector += `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return this;
+  }
+
+  stringify() {
+    return this.cssSelector;
+  }
+
+  checkOrder(order) {
+    if (order < this.currentOrder) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
+  element: (value) => new SelectorConstructor().element(value),
+  id: (value) => new SelectorConstructor().id(value),
+  class: (value) => new SelectorConstructor().class(value),
+  attr: (value) => new SelectorConstructor().attr(value),
+  pseudoClass: (value) => new SelectorConstructor().pseudoClass(value),
+  pseudoElement: (value) => new SelectorConstructor().pseudoElement(value),
+  combine: (sel1, comb, sel2) => new SelectorConstructor().combine(sel1, comb, sel2),
 };
 
 
